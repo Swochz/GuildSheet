@@ -1,84 +1,150 @@
 # GuildSheet
 
-Keeps any guild's Google Sheet up to date from inside WoW Forever.
+**Keep your guild's Google Sheet up to date from inside WoW Forever, without typing.**
 
-- **`GuildSheet/`**: the in-game addon. Only the person running the helper needs it. Anyone else who installs it also shares their own race and professions with their guild.
-- **`helper/`**: a small Python program that copies the addon's data into *your own* sheet.
-- **`tests/`**: runs the addon against a fake WoW API, so it could be tested before launch.
+GuildSheet is an addon that collects your guild's roster, professions and guild bank while you play. A small desktop helper copies that data into your guild's own Google Sheet every time you `/reload` or log out.
 
-## Download
-- **Addon:** CurseForge (search "GuildSheet"), or in WowUp choose *Install from URL* and paste `https://github.com/Swochz/GuildSheet`. Both update automatically.
-- **Helper:** `GuildSheet-Helper-<version>.zip` from the [latest release](https://github.com/Swochz/GuildSheet/releases/latest).
+```
+ In game                         Your PC                       Google
+┌──────────────────┐  /reload  ┌──────────────────┐  writes   ┌──────────────────┐
+│ GuildSheet addon │ ────────▶ │ GuildSheet.lua   │ ────────▶ │ Your guild sheet │
+│ roster, bank,    │  or log   │ (SavedVariables) │  helper   │ "Sync …" tabs    │
+│ professions      │  out      │                  │           │                  │
+└──────────────────┘           └──────────────────┘           └──────────────────┘
+```
 
-**Privacy:** the addon has no internet access (WoW addons can't have it). Everything it collects stays in your own `WTF` folder, and addon messages only go to your own guild's channel. Data only reaches a sheet if someone in that guild runs the helper with their own Google account and sheet. Nothing is sent to the addon's author.
+## Who needs what
 
-The helper **only writes to tabs whose name starts with `Sync `** (Characters, Professions, Guild Bank, Gold Log, Info; Swedish names with `"language": "sv"`). If you point it at your own tabs for player names and characters, it only reads them.
+| You are… | You need | Setup |
+|---|---|---|
+| **The sheet keeper** (one officer) | The addon **and** the helper | About 15 minutes, once. See [Setup](#setup-for-the-sheet-keeper) |
+| **A guild member** | Nothing. The addon is optional | Install it from CurseForge or WowUp and you're done |
+
+Only one person in the guild needs GuildSheet. The guild roster already gives everyone's level, class, rank, zone, online status and notes.
+
+### Does it help if more people run the addon?
+Yes, for the things the roster can't show:
+
+- **Professions:** each member running the addon sends their professions and skill to the sheet keeper automatically whenever both are online. Without it, professions only show up if Forever has an in-game guild professions list.
+- **Race:** sent automatically. Otherwise it's picked up when the sheet keeper groups with, targets or mouses over that character.
+
+Members running the addon don't need the helper and don't configure anything.
 
 ## What ends up in the sheet
 
-| Tab | Where the data comes from |
+The helper creates and fills these tabs. It **never writes to any other tab** in your sheet.
+
+| Tab | Contents |
 |---|---|
-| Sync Characters | Guild roster (everyone, no addon needed): name, level, class, rank, online, zone, notes. Race and professions: see below. |
-| Sync Professions | Own characters plus anyone running the addon. Also the in-game guild professions list, if Forever has one. |
-| Sync Guild Bank | Scanned when you open the guild bank (tabs you can view). |
-| Sync Gold Log | The bank's gold log, collected over time with no duplicates. Times are approximate because the game only says "3 hours ago". |
-| Sync Info | When the last sync ran, member counts, bank gold. |
+| **Sync Characters** | Every member: name, player, Main/Alt, class, race, role, level, rank, online and last online, zone, two main professions, notes |
+| **Sync Professions** | One row per character and profession, with skill |
+| **Sync Guild Bank** | Items per bank tab, stacks summed, with item ID |
+| **Sync Gold Log** | Deposits, withdrawals and repairs, collected over time without duplicates |
+| **Sync Info** | Last sync, member counts, guild bank gold |
 
-**Player, Main/Alt and role** are read from the public note (officer note as a fallback), for example `Main Hampus DPS` or `Alt Jessan heal`. The player name has to match a name in the `players_tab` you configure. Without a note, the helper falls back to your `characters_tab` if the character name is filled in there. Both are optional.
+Tab names and headers can be English or Swedish (`"language": "sv"`).
 
-**Race** isn't in the guild roster. It's picked up when someone is in your group, targeted or moused over, or when they run the addon.
+### Player, Main/Alt and role come from guild notes
+Write notes like these in the guild window (officers can edit everyone's):
 
-## Setup (once, on the PC that runs the helper)
-
-### 1. Addon
-Copy the `GuildSheet` folder to
-`World of Warcraft\<Forever folder>\Interface\AddOns\GuildSheet\`.
-If it shows as "out of date" in the AddOns list, tick **Load out of date AddOns**. The `## Interface:` number in `GuildSheet.toc` is a guess until Forever is out; update it to the client's number.
-
-### 2. Python
-Install Python 3.10 or newer from python.org (tick "Add to PATH"). Then in the `helper` folder:
-```bash
-pip install -r requirements.txt
+```
+Main Anna Tank
+Alt Anna heal
+Main Erik DPS
 ```
 
-### 3. Google access (about 5 minutes)
-1. Go to https://console.cloud.google.com/, create a project (any name).
-2. Under **APIs & Services → Library**, enable **Google Sheets API**.
-3. Under **APIs & Services → Credentials**, choose **Create credentials → Service account**, give it a name and create it.
-4. Open the service account, go to **Keys → Add key → JSON**. Save the file in `helper/` as `service-account.json`. **Keep this file private**: it grants access to the sheet.
-5. Copy the service account's email (ends with `iam.gserviceaccount.com`) and **share the sheet with it as Editor**.
+The helper recognises `Main`/`Alt`, `Tank`/`Heal`/`Healer`/`DPS` and any player name listed in your sheet (see `players_tab` below). The officer note is used if the public note has nothing.
 
-### 4. Config
-Copy `helper/config.example.json` to `helper/config.json` and fill in:
+## Privacy
+- **WoW addons can't use the internet.** Everything the addon collects stays in your own `WTF` folder.
+- Addon messages only go to **your own guild's** channel.
+- Data only reaches a spreadsheet if someone in your guild runs the helper with **their own** Google account and sheet. Nothing is ever sent to the author.
+
+## Download
+- **Addon:** search "GuildSheet" in CurseForge, or in [WowUp](https://wowup.io/) choose **Install from URL** and paste `https://github.com/Swochz/GuildSheet`. Both update automatically. Manual install: `GuildSheet-<version>.zip` from the [latest release](https://github.com/Swochz/GuildSheet/releases/latest), unzipped into `Interface\AddOns`.
+- **Helper:** `GuildSheet-Helper-<version>.zip` from the [latest release](https://github.com/Swochz/GuildSheet/releases/latest).
+
+## Setup for the sheet keeper
+
+### 1. Install the addon
+Use one of the options under [Download](#download). If WoW lists it as "out of date", tick **Load out of date AddOns**.
+
+### 2. Install Python and the helper
+1. Install [Python 3.10 or newer](https://www.python.org/downloads/). Tick **Add python.exe to PATH**.
+2. Unzip `GuildSheet-Helper-<version>.zip` somewhere you'll keep it.
+3. In that folder, run:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### 3. Give the helper access to your sheet (about 5 minutes)
+1. Open the [Google Cloud console](https://console.cloud.google.com/) and create a project (any name).
+2. Under **APIs & Services → Library**, enable **Google Sheets API**.
+3. Under **APIs & Services → Credentials**, choose **Create credentials → Service account**. Give it a name and create it.
+4. Open the service account and go to **Keys → Add key → Create new key → JSON**. Save the file in the helper folder as `service-account.json`.
+   **Keep this file private.** Anyone who has it can edit your sheet.
+5. Copy the service account's email address (ends in `iam.gserviceaccount.com`). In your Google Sheet, click **Share** and add that address as **Editor**.
+
+### 4. Configure
+Copy `config.example.json` to `config.json` and fill it in:
 
 | Setting | What it is |
 |---|---|
 | `spreadsheet_id` | The long ID in your sheet's URL, between `/d/` and `/edit` |
 | `language` | `"en"` or `"sv"`: names and headers of the Sync tabs |
-| `tab_prefix` | Default `"Sync "`. The helper writes only to tabs starting with this |
-| `players_tab`, `players_column` | Optional. A tab with one player name per row, used to read names from guild notes |
-| `characters_tab`, `characters_columns` | Optional. A tab mapping characters to players; the column letters say where player, prio, character, role and alt role are |
+| `tab_prefix` | Default `"Sync "`. The helper only writes to tabs starting with this |
+| `players_tab`, `players_column` | Optional. A tab in your sheet with one player name per row, used to recognise names in guild notes |
+| `characters_tab`, `characters_columns` | Optional. A tab in your sheet that maps characters to players. The column letters say where player, prio, character, role and alt role are. Used when a character has no note |
 | `savedvariables_path` | Leave empty to search the usual WoW folders. Otherwise the full path to `...\WTF\Account\<ACCOUNT>\SavedVariables\GuildSheet.lua` |
-| `guild` | Leave empty to use the guild seen most recently, or set a name if your alts are in several guilds |
+| `guild` | Leave empty to use the guild seen most recently, or set a name if your characters are in several guilds |
 
-`config.json`, `service-account.json` and `state.json` are personal. Never share or upload them (`.gitignore` already leaves them out).
+Tabs you point the helper at with `players_tab` and `characters_tab` are only read, never changed.
 
-## Daily use
-1. Double-click `helper/start_sync.bat` (it keeps running).
-2. Play as usual. Open the guild bank now and then if you want the bank tabs updated.
-3. The sheet updates whenever you type **`/reload`** or log out. That's when the game writes the file.
+### 5. Use it
+1. Double-click `start_sync.bat` and leave the window open.
+2. Play as usual. Open the guild bank now and then to update the bank tabs.
+3. The sheet updates every time you type `/reload` or log out. That's when WoW writes the addon's data to disk.
 
-In game: `/gsheet` shows status, `/gsheet scan` refreshes, `/gsheet reset` clears saved data for the guild.
-
-Without touching the sheet, `python guildsheet_sync.py --dry-run` shows what would be written.
-
-## Good to know
-- **Beta bug:** in the beta, the game writes the addon's file but doesn't load it back at login. The helper keeps its own copy (`helper/state.json`), so nothing is lost; data just gets re-collected each session.
-- The sheet is only as fresh as the last `/reload` or logout. Anyone else who runs the helper with the same setup also keeps it fresh.
-- When it works well after launch, the next step is deciding what to move from the Sync tabs into the real tabs (or point formulas there).
-
-## Testing without the game
+To check what would be written without touching the sheet:
 ```bash
-pip install lupa
-python tests/test_end_to_end.py
+python guildsheet_sync.py --dry-run
 ```
+
+## In-game commands
+
+| Command | What it does |
+|---|---|
+| `/gsheet` | Shows how many members, races and professions are collected, and when the roster and bank were last scanned |
+| `/gsheet scan` | Refreshes the roster and resends your own professions |
+| `/gsheet reset` | Clears saved data for your current guild |
+
+## FAQ
+
+**Why doesn't the sheet update instantly?**
+WoW only lets addons save data when you `/reload` or log out. The helper picks up the change within a few seconds of that.
+
+**Does the helper need to run while I play?**
+Only to update the sheet. If it wasn't running, start it later: it syncs the latest saved data straight away.
+
+**Can it read other players' professions without them having the addon?**
+Only if WoW Forever has a guild professions list. Otherwise each player's professions come from their own addon.
+
+**Is this allowed?**
+Yes. It only uses the normal addon API, outside combat, and reads its own SavedVariables file, the same way tools like WarcraftLogs and TSM do.
+
+**I deleted `state.json`. Is the gold log lost?**
+No. The helper rebuilds it from the Sync Gold Log tab on the next sync.
+
+## Known issues
+- **WoW Forever beta:** the client sometimes doesn't load addon data at login. The addon collects it again, and the helper keeps its own copy, so nothing is lost.
+- Gold log times are approximate, because the game only reports "3 hours ago" or "2 days ago".
+
+## For developers
+- `GuildSheet/`: the addon (Lua)
+- `helper/`: the helper (Python)
+- `tests/`: runs the addon against a fake WoW API and feeds its output through the helper:
+  ```bash
+  pip install lupa
+  python tests/test_end_to_end.py
+  ```
+- **Releasing:** bump `## Version:` in `GuildSheet/GuildSheet.toc`, commit, and push a tag like `v0.1.1`. GitHub Actions builds both zips and publishes the release.
