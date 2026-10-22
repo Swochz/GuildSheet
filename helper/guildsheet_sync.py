@@ -480,7 +480,12 @@ def build_tabs(guild_name: str, st: dict, players: list[str], known: dict, sourc
         totals: dict[tuple, int] = {}
         for it in as_list(tab.get("items")):
             m = re.search(r"\|Hitem:(\d+)[^|]*\|h\[([^\]]*)\]", it.get("link") or "")
-            item_id, item_name = (m.group(1), m.group(2)) if m else ("", it.get("link") or "?")
+            if m:
+                item_id, item_name = m.group(1), m.group(2)
+            elif it.get("id"):  # shared by another addon user; the name wasn't loaded in their client yet
+                item_id, item_name = str(it["id"]), f"item:{it['id']}"
+            else:
+                item_id, item_name = "", it.get("link") or "?"
             totals[(item_name, item_id)] = totals.get((item_name, item_id), 0) + (it.get("count") or 1)
         for (item_name, item_id), count in sorted(totals.items()):
             gb.append([item_name, count, tab.get("name") or T["bank_tab"].format(idx), item_id, fmt_time(tab.get("updated"))])

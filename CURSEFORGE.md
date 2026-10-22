@@ -9,7 +9,7 @@
 | Game version | WoW Forever (the client's version) |
 | Category | Guild (also: Professions, Data Export) |
 | License | MIT or All Rights Reserved, your choice |
-| File | `dist/GuildSheet-0.1.0.zip` |
+| File | `dist/GuildSheet-0.2.0.zip` |
 | Release type | Beta (until it's been tested after launch) |
 
 ## Description (paste into the description editor)
@@ -26,9 +26,9 @@ The guild roster already gives every member's level, class, rank, zone, online s
 ### What it collects
 - **Roster:** level, class, rank, zone, online and last online, public and officer notes (if you can view them)
 - **Main/Alt, player and role** from guild notes, e.g. `Main Anna Tank` or `Alt of Erik, heal`
-- **Professions and skill:** your own, guildmates running the addon, and the guild professions list if available
+- **Professions and skill:** your own, guildmates running the addon (also relayed between addon users who are never online together), and the guild professions list if available
 - **Race:** picked up from group members, your target and mouseover (only out of combat)
-- **Guild bank:** items per tab you can view, gold balance, and the gold log
+- **Guild bank:** items per tab you can view, gold balance, and the gold log. Scans are shared with addon users of the same rank or higher
 
 ### Privacy
 WoW addons have no internet access. Everything stays in your own SavedVariables file, and addon messages only go to your own guild's channel. Data only reaches a spreadsheet if someone in your guild runs the helper with their own Google account and sheet. Nothing is ever sent to the author.
@@ -55,7 +55,7 @@ Feedback and bug reports are welcome in the comments.
 1. Sign in at https://authors.curseforge.com/ (free account).
 2. **Create project**, choose game *World of Warcraft*, then fill in the fields from the table above.
 3. Paste the description and add an icon (400×400 px, optional but helps).
-4. Go to **Files → Upload file**, choose `dist/GuildSheet-0.1.0.zip`, the Forever game version and release type *Beta*.
+4. Go to **Files → Upload file**, choose `dist/GuildSheet-0.2.0.zip`, the Forever game version and release type *Beta*.
 5. Submit. Moderators review new projects, usually within a few hours to a couple of days.
 
 ## Before you submit

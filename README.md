@@ -23,10 +23,11 @@ GuildSheet is an addon that collects your guild's roster, professions and guild 
 Only one person in the guild needs GuildSheet. The guild roster already gives everyone's level, class, rank, zone, online status and notes.
 
 ### Does it help if more people run the addon?
-Yes, for the things the roster can't show:
+Yes. Everyone running the addon shares what they know, in the background:
 
-- **Professions:** each member running the addon sends their professions and skill to the sheet keeper automatically whenever both are online. Without it, professions only show up if Forever has an in-game guild professions list.
-- **Race:** sent automatically. Otherwise it's picked up when the sheet keeper groups with, targets or mouses over that character.
+- **Their own professions and race.** Without the addon, professions only show up if Forever has an in-game guild professions list, and race only when the sheet keeper groups with, targets or mouses over that character.
+- **What they know about others.** Addon users pass data along, so it reaches the sheet keeper even from members who are never online at the same time. When someone logs in, one addon user who is online sends them everything it knows, and they send back anything it was missing.
+- **Guild bank scans.** When any addon user opens the guild bank, the scan (items, gold and gold log) goes to addon users of **the same guild rank or higher** who are online. Lower ranks never receive it, so officer-only tabs stay with officers.
 
 Members running the addon don't need the helper and don't configure anything.
 
@@ -142,9 +143,10 @@ No. The helper rebuilds it from the Sync Gold Log tab on the next sync.
 ## For developers
 - `GuildSheet/`: the addon (Lua)
 - `helper/`: the helper (Python)
-- `tests/`: runs the addon against a fake WoW API and feeds its output through the helper:
+- `tests/`: runs the addon against a fake WoW API and feeds its output through the helper. `test_sharing.py` runs several clients at once and routes their addon messages between them:
   ```bash
   pip install lupa
   python tests/test_end_to_end.py
+  python tests/test_sharing.py
   ```
 - **Releasing:** bump `## Version:` in `GuildSheet/GuildSheet.toc`, commit, and push a tag like `v0.1.1`. GitHub Actions builds both zips and publishes the release.

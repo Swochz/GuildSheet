@@ -20,7 +20,7 @@ MOCK = {
 }
 
 for _, e in ipairs({
-    "PLAYER_LOGIN", "GUILD_ROSTER_UPDATE", "PLAYER_GUILD_UPDATE", "CHAT_MSG_ADDON", "GROUP_ROSTER_UPDATE",
+    "PLAYER_LOGIN", "PLAYER_LOGOUT", "GUILD_ROSTER_UPDATE", "PLAYER_GUILD_UPDATE", "CHAT_MSG_ADDON", "GROUP_ROSTER_UPDATE",
     "PLAYER_TARGET_CHANGED", "UPDATE_MOUSEOVER_UNIT", "SKILL_LINES_CHANGED", "PLAYER_INTERACTION_MANAGER_FRAME_SHOW",
     "PLAYER_INTERACTION_MANAGER_FRAME_HIDE", "GUILDBANKBAGSLOTS_CHANGED", "GUILDBANK_UPDATE_MONEY", "GUILDBANKLOG_UPDATE",
 }) do MOCK.known_events[e] = true end
@@ -122,8 +122,19 @@ end
 -- addon messages
 C_ChatInfo = {
     RegisterAddonMessagePrefix = function(p) MOCK.prefix = p end,
-    SendAddonMessage = function(prefix, msg, channel) table.insert(MOCK.sent, { prefix = prefix, msg = msg, channel = channel }) end,
+    SendAddonMessage = function(prefix, msg, channel, target)
+        if #msg > 255 then error("addon message too long: " .. #msg) end
+        table.insert(MOCK.sent, { prefix = prefix, msg = msg, channel = channel, target = target })
+        return 0
+    end,
 }
+
+-- items: MOCK.items[id] = name (nil = not loaded in this client yet)
+MOCK.items = {}
+function GetItemInfo(id)
+    local name = MOCK.items[id]
+    if name then return name, "|cffffffff|Hitem:" .. id .. "::::::::|h[" .. name .. "]|h|r" end
+end
 
 -- guild bank
 Enum = { PlayerInteractionType = { GuildBanker = 10 } }
