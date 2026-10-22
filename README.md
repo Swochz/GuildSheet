@@ -149,4 +149,4 @@ No. The helper rebuilds it from the Sync Gold Log tab on the next sync.
   python tests/test_end_to_end.py
   python tests/test_sharing.py
   ```
-- **Releasing:** bump `## Version:` in `GuildSheet/GuildSheet.toc`, commit, and push a tag like `v0.1.1`. GitHub Actions builds both zips and publishes the release.
+- **Releasing:** bump `## Version:` in `GuildSheet/GuildSheet.toc`, commit, and push a tag like `v0.3.0` (or `v0.3.0-beta`). GitHub Actions builds both zips, publishes the GitHub release and uploads the addon to CurseForge (needs the `CF_API_KEY` repository secret).

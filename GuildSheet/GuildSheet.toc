@@ -4,5 +4,6 @@
 ## Author: Hampus
 ## Version: 0.2.0
 ## SavedVariables: GuildSheetDB
+## X-Curse-Project-ID: 1759220
 
 GuildSheet.lua

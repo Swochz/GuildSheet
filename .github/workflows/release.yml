@@ -1,6 +1,8 @@
-# Push a tag like v0.1.0 to publish a GitHub release with two zips:
-#   GuildSheet-<version>.zip         the addon (for WowUp "Install from URL" or manual install)
-#   GuildSheet-Helper-<version>.zip  the sheet helper
+# Push a tag like v0.3.0 to publish a release:
+#   GitHub release with GuildSheet-<version>.zip (the addon) and GuildSheet-Helper-<version>.zip
+#   CurseForge upload of the addon zip (needs the CF_API_KEY repository secret)
+#
+# Tags containing "alpha" or "beta" (v0.3.0-beta) are uploaded to CurseForge as alpha/beta.
 name: Release
 
 on:
@@ -10,11 +12,17 @@ on:
 permissions:
   contents: write
 
+env:
+  CF_PROJECT_ID: "1759220"
+  CF_GAME_VERSION: "1.60.1" # WoW Forever, as CurseForge names it
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history, for the changelog
 
       - name: Check the tag matches the .toc version
         run: |
@@ -32,7 +40,51 @@ jobs:
           cp helper/guildsheet_sync.py helper/config.example.json helper/requirements.txt helper/start_sync.bat README.md staging/GuildSheet-Helper/
           (cd staging && zip -r "../dist/GuildSheet-Helper-$ver.zip" GuildSheet-Helper)
 
-      - name: Publish release
+      - name: Write changelog
+        run: |
+          prev=$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || true)
+          {
+            echo "## GuildSheet ${GITHUB_REF_NAME#v}"
+            echo
+            git log --no-merges --pretty='- %s' ${prev:+$prev..}"$GITHUB_REF_NAME"
+          } > changelog.md
+          cat changelog.md
+
+      - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/*.zip --title "GuildSheet $GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" dist/*.zip --title "GuildSheet $GITHUB_REF_NAME" --notes-file changelog.md
+
+      - name: Upload to CurseForge
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+        run: |
+          if [ -z "$CF_API_KEY" ]; then
+            echo "::warning::CF_API_KEY secret not set; skipping the CurseForge upload."
+            exit 0
+          fi
+          ver=${GITHUB_REF_NAME#v}
+          case "$GITHUB_REF_NAME" in
+            *alpha*) type=alpha ;;
+            *beta*) type=beta ;;
+            *) type=release ;;
+          esac
+
+          # CurseForge wants game version IDs, so look up the ID for CF_GAME_VERSION.
+          curl -sS --fail-with-body -H "X-Api-Token: $CF_API_KEY" https://wow.curseforge.com/api/game/versions > versions.json
+          ids=$(jq -c --arg v "$CF_GAME_VERSION" '[.[] | select(.name == $v) | .id]' versions.json)
+          if [ "$ids" = "[]" ]; then
+            echo "::error::CurseForge has no game version named $CF_GAME_VERSION. Newest versions:"
+            jq -r 'sort_by(.id) | reverse | .[:15][] | "\(.id)  \(.name)"' versions.json
+            exit 1
+          fi
+
+          jq -n --arg log "$(cat changelog.md)" --arg name "GuildSheet $ver" --arg type "$type" --argjson ids "$ids" \
+            '{changelog: $log, changelogType: "markdown", displayName: $name, releaseType: $type, gameVersions: $ids}' > metadata.json
+          cat metadata.json
+          curl -sS --fail-with-body -H "X-Api-Token: $CF_API_KEY" \
+            -F "metadata=<metadata.json" \
+            -F "file=@dist/GuildSheet-$ver.zip" \
+            "https://wow.curseforge.com/api/projects/$CF_PROJECT_ID/upload-file"
+          echo
+          echo "Uploaded to CurseForge as $type."
