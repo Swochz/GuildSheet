@@ -1,0 +1,13 @@
+{
+  "spreadsheet_id": "PASTE_YOUR_SHEET_ID_HERE",
+  "service_account_file": "service-account.json",
+  "language": "en",
+  "tab_prefix": "Sync ",
+  "players_tab": "",
+  "players_column": "A",
+  "characters_tab": "",
+  "characters_columns": {"player": "A", "prio": "B", "character": "C", "role": "F", "alt_role": "G"},
+  "savedvariables_path": "",
+  "guild": "",
+  "poll_seconds": 5
+}
