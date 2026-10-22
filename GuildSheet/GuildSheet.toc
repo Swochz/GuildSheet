@@ -2,7 +2,7 @@
 ## Title: GuildSheet
 ## Notes: Collects guild roster, professions and guild bank data for the guild's Google Sheet.
 ## Author: Hampus
-## Version: 0.2.0
+## Version: 0.2.1-beta
 ## SavedVariables: GuildSheetDB
 ## X-Curse-Project-ID: 1759220
 
