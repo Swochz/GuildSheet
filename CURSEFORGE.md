@@ -11,6 +11,7 @@
 | License | MIT or All Rights Reserved, your choice |
 | File | `dist/GuildSheet-0.2.0.zip` |
 | Release type | Beta (until it's been tested after launch) |
+| Icon | `assets/icon.png` (400×400) |
 
 ## Description (paste into the description editor)
 
@@ -54,7 +55,7 @@ Feedback and bug reports are welcome in the comments.
 ## Upload steps
 1. Sign in at https://authors.curseforge.com/ (free account).
 2. **Create project**, choose game *World of Warcraft*, then fill in the fields from the table above.
-3. Paste the description and add an icon (400×400 px, optional but helps).
+3. Paste the description and upload `assets/icon.png` as the project icon.
 4. Go to **Files → Upload file**, choose `dist/GuildSheet-0.2.0.zip`, the Forever game version and release type *Beta*.
 5. Submit. Moderators review new projects, usually within a few hours to a couple of days.
 
