@@ -21,7 +21,7 @@
 GuildSheet collects your guild's roster, professions and guild bank while you play. A small optional desktop helper then copies it into your guild's own Google Sheet.
 
 ### Only one person in the guild needs it
-The guild roster already gives every member's level, class, rank, zone, online status and notes. So one officer running GuildSheet is enough. Anyone else who installs it also shares their own race and professions with the guild automatically.
+The guild roster already gives every member's level, class, rank, zone, online status and notes. So one officer running GuildSheet is enough. Anyone else who installs it shares their race and professions automatically, passes along what it knows about other members, and shares guild bank scans with addon users of the same rank or higher.
 
 ### What it collects
 - **Roster:** level, class, rank, zone, online and last online, public and officer notes (if you can view them)
