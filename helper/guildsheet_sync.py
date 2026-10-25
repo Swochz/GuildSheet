@@ -333,7 +333,8 @@ def merge_money_log(existing: list, scanned: list, scanned_at: int) -> list:
 # ---------------------------------------------------------------------------
 
 def short(name: str) -> str:
-    return (name or "").split("-")[0]
+    """'Berta Barkbit-Realm' -> 'Berta Barkbit'. Only the last '-' is the realm, so hyphenated surnames survive."""
+    return (name or "").rsplit("-", 1)[0]
 
 
 def fmt_time(ts) -> str:

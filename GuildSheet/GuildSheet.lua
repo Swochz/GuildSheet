@@ -801,6 +801,16 @@ SlashCmdList.GUILDSHEET = function(arg)
         RequestRoster()
         BroadcastSelf(true)
         print_("Refreshing roster and professions. Type /reload afterwards to save for the helper.")
+    elseif arg == "names" then
+        -- Shows how the game reports names, e.g. whether WoW Forever includes surnames and realms.
+        local n, r = UnitName("player")
+        print_(string.format("UnitName: [%s] realm: [%s]  stored as: [%s]", tostring(n), tostring(r), tostring(me())))
+        local name, _, _, _, _, _, note = GetGuildRosterInfo(1)
+        print_(string.format("Roster #1: [%s]  note: [%s]", tostring(name), tostring(note)))
+        if UnitExists("target") and UnitIsPlayer("target") then
+            local tn, tr = UnitName("target")
+            print_(string.format("Target: [%s] realm: [%s]", tostring(tn), tostring(tr)))
+        end
     elseif arg == "reset" then
         local guildName = GetGuildInfo("player")
         GuildSheetDB.guilds[guildName] = nil
@@ -816,7 +826,7 @@ SlashCmdList.GUILDSHEET = function(arg)
             CountKeys(db.chars, function(c) return c.profs and #c.profs > 0 end),
             CountKeys(peers, function(seen) return t - seen < PEER_TIMEOUT end)))
         print_("Roster: " .. Ago(db.rosterUpdated) .. ". Guild bank: " .. Ago(db.bank.moneyUpdated) .. ".")
-        print_("The helper sees new data after /reload or logout. Commands: /gsheet scan, /gsheet reset")
+        print_("The helper sees new data after /reload or logout. Commands: /gsheet scan, /gsheet names, /gsheet reset")
     end
 end
 
