@@ -340,6 +340,13 @@ def short(name: str) -> str:
     return (name or "").rsplit("-", 1)[0]
 
 
+def clean_item_name(name: str) -> str:
+    """Retail puts the crafting quality icon inside item names: 'Potion |A:Professions-ChatIcon-Quality-Tier3:...|a'."""
+    tier = re.search(r"\|A:Professions-ChatIcon-Quality-Tier(\d+)", name)
+    name = re.sub(r"\|A:[^|]*\|a|\|T[^|]*\|t", "", name).strip()
+    return f"{name} (Tier {tier.group(1)})" if tier else name
+
+
 def fmt_time(ts) -> str:
     return datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M") if ts else ""
 
@@ -485,7 +492,7 @@ def build_tabs(guild_name: str, st: dict, players: list[str], known: dict, sourc
         for it in as_list(tab.get("items")):
             m = re.search(r"\|Hitem:(\d+)[^|]*\|h\[([^\]]*)\]", it.get("link") or "")
             if m:
-                item_id, item_name = m.group(1), m.group(2)
+                item_id, item_name = m.group(1), clean_item_name(m.group(2))
             elif it.get("id"):  # shared by another addon user; the name wasn't loaded in their client yet
                 item_id, item_name = str(it["id"]), f"item:{it['id']}"
             else:
