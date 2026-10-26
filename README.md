@@ -117,6 +117,7 @@ python guildsheet_sync.py --dry-run
 |---|---|
 | `/gsheet` | Shows how many members, races and professions are collected, and when the roster and bank were last scanned |
 | `/gsheet scan` | Refreshes the roster and resends your own professions |
+| `/gsheet bank` | With the guild bank open: shows what the game reports about each tab and the gold log (for troubleshooting) |
 | `/gsheet names` | Shows how the game reports your name, the first roster entry and your target (useful for checking first/last names) |
 | `/gsheet reset` | Clears saved data for your current guild |
 
@@ -150,5 +151,6 @@ No. The helper rebuilds it from the Sync Gold Log tab on the next sync.
   python tests/test_end_to_end.py
   python tests/test_sharing.py
   python tests/test_names.py
+  python tests/test_bank_late.py
   ```
 - **Releasing:** bump `## Version:` in `GuildSheet/GuildSheet.toc`, commit, and push a tag like `v0.3.0` (or `v0.3.0-beta`). GitHub Actions builds both zips, publishes the GitHub release and uploads the addon to CurseForge (needs the `CF_API_KEY` repository secret).

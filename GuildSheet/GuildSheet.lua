@@ -679,10 +679,20 @@ end
 -- Guild bank (scanned whenever someone with the addon opens it)
 ---------------------------------------------------------------------------
 
+-- Errors and odd results are kept in the saved file (db.debug), so problems can be diagnosed later.
+local function Note(msg)
+    if not db then return end
+    db.debug = db.debug or {}
+    local log = db.debug.log or {}
+    log[#log + 1] = date("%Y-%m-%d %H:%M:%S") .. " " .. msg
+    while #log > 30 do table.remove(log, 1) end
+    db.debug.log = log
+end
+
 local function ScanBankTab(tab)
-    if not EnsureDB() or not bankOpen then return end
+    if not EnsureDB() or not bankOpen or not tab then return end
     local name, _, isViewable = GetGuildBankTabInfo(tab)
-    if not isViewable then return end
+    if isViewable == false then return end -- only skip when the game says no; nil means unknown
     local items = {}
     for slot = 1, (MAX_GUILDBANK_SLOTS_PER_TAB or 98) do
         local link = GetGuildBankItemLink(tab, slot)
@@ -691,8 +701,18 @@ local function ScanBankTab(tab)
             items[#items + 1] = { link = link, id = tonumber(link:match("item:(%d+)")), count = count or 1 }
         end
     end
+    local old = db.bank.tabs[tab]
+    -- An empty result right after opening usually means the tab hasn't arrived yet; keep what we had.
+    if #items == 0 and old and old.items and #old.items > 0 and now() - (old.updated or 0) < 60 then return end
     db.bank.tabs[tab] = { name = name, items = items, updated = now() }
     Touch()
+end
+
+local function ScanAllBankTabs()
+    for tab = 1, (GetNumGuildBankTabs() or 0) do
+        local ok, err = pcall(ScanBankTab, tab)
+        if not ok then Note("ScanBankTab " .. tab .. ": " .. tostring(err)) end
+    end
 end
 
 local function ScanMoney()
@@ -705,8 +725,22 @@ local function ScanMoney()
     end
 end
 
+local moneyLogRetries = 0
+
 local function ScanMoneyLog()
     if not EnsureDB() or not GetNumGuildBankMoneyTransactions then return end
+    if (GetNumGuildBankMoneyTransactions() or 0) == 0 then
+        -- The update can arrive before the money log itself; ask again a couple of times.
+        if moneyLogRetries < 3 and bankOpen and QueryGuildBankLog then
+            moneyLogRetries = moneyLogRetries + 1
+            C_Timer.After(2, function()
+                if bankOpen then QueryGuildBankLog((MAX_GUILDBANK_TABS or 8) + 1) end
+            end)
+        else
+            Note("money log stayed empty")
+        end
+        return
+    end
     local log = {}
     for i = 1, GetNumGuildBankMoneyTransactions() do
         local typ, name, amount, y, m, d, h = GetGuildBankMoneyTransaction(i)
@@ -727,10 +761,17 @@ local function ScanMoneyLog()
     Touch()
 end
 
-local function StartBankScan()
-    if not EnsureDB() then return end
+local function StartBankScan(attempt)
+    if not EnsureDB() or not bankOpen then return end
     bankScanStarted = now()
+    moneyLogRetries = 0
     local numTabs = GetNumGuildBankTabs() or 0
+    if numTabs == 0 and (attempt or 1) < 5 then
+        -- Tab info can arrive a moment after the bank opens.
+        C_Timer.After(1, function() StartBankScan((attempt or 1) + 1) end)
+        ScanMoney()
+        return
+    end
     for tab = numTabs + 1, #db.bank.tabs do db.bank.tabs[tab] = nil end -- tabs that no longer exist
 
     -- Query tabs one by one; the server only sends one tab at a time.
@@ -738,7 +779,10 @@ local function StartBankScan()
         C_Timer.After((tab - 1) * 1.0, function()
             if not bankOpen then return end
             QueryGuildBankTab(tab)
-            C_Timer.After(0.7, function() ScanBankTab(tab) end)
+            C_Timer.After(0.7, function()
+                local ok, err = pcall(ScanBankTab, tab)
+                if not ok then Note("ScanBankTab " .. tab .. ": " .. tostring(err)) end
+            end)
         end)
     end
     C_Timer.After(numTabs * 1.0 + 0.5, function()
@@ -801,6 +845,28 @@ SlashCmdList.GUILDSHEET = function(arg)
         RequestRoster()
         BroadcastSelf(true)
         print_("Refreshing roster and professions. Type /reload afterwards to save for the helper.")
+    elseif arg == "bank" then
+        -- Open the guild bank first. Prints what the game reports, and saves it for diagnosing.
+        local lines = {}
+        local function out(m) lines[#lines + 1] = m; print_(m) end
+        out(string.format("bank open: %s  tabs: %s  current: %s  MAX_TABS: %s  slots: %s",
+            tostring(bankOpen), tostring(GetNumGuildBankTabs and GetNumGuildBankTabs()),
+            tostring(GetCurrentGuildBankTab and GetCurrentGuildBankTab()), tostring(MAX_GUILDBANK_TABS),
+            tostring(MAX_GUILDBANK_SLOTS_PER_TAB)))
+        for tab = 1, (GetNumGuildBankTabs and GetNumGuildBankTabs() or 0) do
+            local info = { GetGuildBankTabInfo(tab) }
+            local links = 0
+            for slot = 1, (MAX_GUILDBANK_SLOTS_PER_TAB or 98) do
+                if GetGuildBankItemLink(tab, slot) then links = links + 1 end
+            end
+            local parts_ = {}
+            for i = 1, 7 do parts_[i] = tostring(info[i]) end
+            out(string.format("tab %d: %s  items: %d", tab, table.concat(parts_, ", "), links))
+        end
+        out("money log entries: " .. tostring(GetNumGuildBankMoneyTransactions and GetNumGuildBankMoneyTransactions()))
+        out("C_GuildBank: " .. tostring(C_GuildBank ~= nil))
+        db.debug = db.debug or {}
+        db.debug.bank = lines
     elseif arg == "names" then
         -- Shows how the game reports names, e.g. whether WoW Forever includes surnames and realms.
         local n, r = UnitName("player")
@@ -826,7 +892,7 @@ SlashCmdList.GUILDSHEET = function(arg)
             CountKeys(db.chars, function(c) return c.profs and #c.profs > 0 end),
             CountKeys(peers, function(seen) return t - seen < PEER_TIMEOUT end)))
         print_("Roster: " .. Ago(db.rosterUpdated) .. ". Guild bank: " .. Ago(db.bank.moneyUpdated) .. ".")
-        print_("The helper sees new data after /reload or logout. Commands: /gsheet scan, /gsheet names, /gsheet reset")
+        print_("The helper sees new data after /reload or logout. Commands: /gsheet scan, /gsheet bank, /gsheet names, /gsheet reset")
     end
 end
 
@@ -853,6 +919,7 @@ SafeRegister("PLAYER_INTERACTION_MANAGER_FRAME_HIDE")
 SafeRegister("GUILDBANKFRAME_OPENED")
 SafeRegister("GUILDBANKFRAME_CLOSED")
 SafeRegister("GUILDBANKBAGSLOTS_CHANGED")
+SafeRegister("GUILDBANK_UPDATE_TABS")
 SafeRegister("GUILDBANK_UPDATE_MONEY")
 SafeRegister("GUILDBANKLOG_UPDATE")
 
@@ -909,7 +976,9 @@ frame:SetScript("OnEvent", function(_, event, ...)
     elseif event == "GUILDBANKFRAME_CLOSED" then
         OnBankClosed()
     elseif event == "GUILDBANKBAGSLOTS_CHANGED" then
-        if bankOpen and GetCurrentGuildBankTab then ScanBankTab(GetCurrentGuildBankTab()) end
+        if bankOpen then ScanAllBankTabs() end
+    elseif event == "GUILDBANK_UPDATE_TABS" then
+        if bankOpen then ScanAllBankTabs() end
     elseif event == "GUILDBANK_UPDATE_MONEY" then
         if bankOpen then ScanMoney() end
     elseif event == "GUILDBANKLOG_UPDATE" then

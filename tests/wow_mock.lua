@@ -65,6 +65,7 @@ C_Timer = {
 
 function GetServerTime() return math.floor(MOCK.time) end
 function time() return math.floor(MOCK.time) end
+function date(fmt) return os.date(fmt, math.floor(MOCK.time)) end
 DEFAULT_CHAT_FRAME = { AddMessage = function(_, m) table.insert(MOCK.printed, m) end }
 SlashCmdList = {}
 function GetNormalizedRealmName() return MOCK.realm end
@@ -140,8 +141,12 @@ end
 Enum = { PlayerInteractionType = { GuildBanker = 10 } }
 MAX_GUILDBANK_SLOTS_PER_TAB = 98
 MAX_GUILDBANK_TABS = 8
-function GetNumGuildBankTabs() return #MOCK.bank.tabs end
-function GetGuildBankTabInfo(tab) local t = MOCK.bank.tabs[tab]; return t.name, 0, t.viewable ~= false end
+function GetNumGuildBankTabs() if MOCK.bank.tabsHidden then return 0 end return #MOCK.bank.tabs end
+function GetGuildBankTabInfo(tab)
+    local t = MOCK.bank.tabs[tab]
+    if MOCK.bank.viewableUnknown then return t.name, 0, nil end
+    return t.name, 0, t.viewable ~= false
+end
 function QueryGuildBankTab(tab) MOCK.bank.queried = MOCK.bank.queried or {}; MOCK.bank.queried[tab] = true end
 function GetGuildBankItemLink(tab, slot)
     if not (MOCK.bank.queried and MOCK.bank.queried[tab]) then return nil end
@@ -152,7 +157,7 @@ function GetGuildBankItemInfo(tab, slot) local it = MOCK.bank.tabs[tab].slots[sl
 function GetCurrentGuildBankTab() return 1 end
 function GetGuildBankMoney() return MOCK.bank.money end
 function QueryGuildBankLog() MOCK.bank.logQueried = true end
-function GetNumGuildBankMoneyTransactions() return #MOCK.bank.log end
+function GetNumGuildBankMoneyTransactions() if MOCK.bank.logHidden then return 0 end return #MOCK.bank.log end
 function GetGuildBankMoneyTransaction(i) local e = MOCK.bank.log[i]; return e[1], e[2], e[3], e[4], e[5], e[6], e[7] end
 
 -- Writes a table the way WoW writes SavedVariables (including the "-- [n]" comments).
