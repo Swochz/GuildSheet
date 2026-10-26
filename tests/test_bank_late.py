@@ -58,6 +58,19 @@ def main():
     dbg = G.GuildSheetDB.guilds["Testgilla"].debug
     lines = list(dbg.bank.values())
     check(any(l.startswith("tab 1: Materials") and "items: 1" in l for l in lines), "/gsheet bank saved its report")
+
+    # Gold deposited while the bank is open: the new log entry is picked up without any command.
+    lua.execute("""
+        MOCK.fire('PLAYER_INTERACTION_MANAGER_FRAME_SHOW', 10)
+        MOCK.advance(5)
+        table.insert(MOCK.bank.log, { "deposit", "Humlesnurr", 10000, 0, 0, 0, 0 })
+        MOCK.bank.money = MOCK.bank.money + 10000
+        MOCK.fire('GUILDBANK_UPDATE_MONEY')
+        MOCK.advance(1)
+        MOCK.fire('GUILDBANKLOG_UPDATE')
+        MOCK.fire('PLAYER_INTERACTION_MANAGER_FRAME_HIDE', 10)
+    """)
+    check(bank.money == 860974203 and len(list(bank.moneyLog.values())) == 2, "deposit during the visit updates gold and log")
     print("\nAll checks passed.")
 
 

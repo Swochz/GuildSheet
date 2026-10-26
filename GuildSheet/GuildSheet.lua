@@ -865,6 +865,10 @@ SlashCmdList.GUILDSHEET = function(arg)
         end
         out("money log entries: " .. tostring(GetNumGuildBankMoneyTransactions and GetNumGuildBankMoneyTransactions()))
         out("C_GuildBank: " .. tostring(C_GuildBank ~= nil))
+        if bankOpen then
+            ScanAllBankTabs()
+            ScanMoneyLog()
+        end
         db.debug = db.debug or {}
         db.debug.bank = lines
     elseif arg == "names" then
@@ -980,7 +984,12 @@ frame:SetScript("OnEvent", function(_, event, ...)
     elseif event == "GUILDBANK_UPDATE_TABS" then
         if bankOpen then ScanAllBankTabs() end
     elseif event == "GUILDBANK_UPDATE_MONEY" then
-        if bankOpen then ScanMoney() end
+        if bankOpen then
+            ScanMoney()
+            -- Gold moved while the bank is open: the gold log has a new entry, so read it again.
+            moneyLogRetries = 0
+            if QueryGuildBankLog then QueryGuildBankLog((MAX_GUILDBANK_TABS or 8) + 1) end
+        end
     elseif event == "GUILDBANKLOG_UPDATE" then
         if bankOpen then ScanMoneyLog() end
     end
