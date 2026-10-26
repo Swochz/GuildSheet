@@ -211,6 +211,7 @@ def apply_defaults(cfg: dict) -> dict:
     cfg.setdefault("players_column", "A")
     cfg.setdefault("characters_tab", "")
     cfg.setdefault("characters_columns", {})
+    cfg.setdefault("state_file", "state.json")
     if cfg["language"] not in TEXT:
         sys.exit(f"language must be one of: {', '.join(TEXT)}")
     return cfg
@@ -232,7 +233,9 @@ def find_saved_variables(cfg: dict) -> Path | None:
         hits += glob.glob(f"{root}/*/WTF/Account/*/SavedVariables/{ADDON_FILE}")
     if not hits:
         return None
-    return Path(max(hits, key=os.path.getmtime))
+    # Prefer Forever, so testing the addon in retail never ends up in the real sheet.
+    forever = [h for h in hits if "_forever_" in h.replace("\\", "/")]
+    return Path(max(forever or hits, key=os.path.getmtime))
 
 
 # ---------------------------------------------------------------------------
@@ -657,9 +660,14 @@ def main():
     ap.add_argument("--once", action="store_true", help="sync once and exit")
     ap.add_argument("--dry-run", action="store_true", help="print what would be written; don't touch the sheet")
     ap.add_argument("--file", help="path to GuildSheet.lua (overrides config and auto-search)")
+    ap.add_argument("--config", help="config file to use instead of config.json (e.g. for a test setup)")
     args = ap.parse_args()
 
+    global CONFIG_FILE, STATE_FILE
+    if args.config:
+        CONFIG_FILE = Path(args.config).resolve()
     cfg = load_config() if not (args.dry_run and not CONFIG_FILE.exists()) else apply_defaults({})
+    STATE_FILE = HERE / cfg["state_file"]
     sv_path = Path(args.file) if args.file else find_saved_variables(cfg)
     if not sv_path or not sv_path.exists():
         sys.exit("Couldn't find GuildSheet.lua. Log in once with the addon enabled and /reload, "

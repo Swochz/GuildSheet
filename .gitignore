@@ -1,6 +1,7 @@
-helper/config.json
+helper/config*.json
+!helper/config.example.json
 helper/service-account.json
-helper/state.json
+helper/state*.json
 __pycache__/
 *.zip
 tests/out_GuildSheet.lua

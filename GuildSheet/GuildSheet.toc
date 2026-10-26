@@ -1,4 +1,4 @@
-## Interface: 120105
+## Interface: 16001, 120105
 ## Title: GuildSheet
 ## Notes: Collects guild roster, professions and guild bank data for the guild's Google Sheet.
 ## Author: Hampus

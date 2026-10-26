@@ -61,5 +61,5 @@ Feedback and bug reports are welcome in the comments.
 
 ## Before you submit
 - **Helper link:** points to https://github.com/Swochz/GuildSheet. It only works once the repo is public.
-- **Interface number:** if the Forever client reports a different number than `120105`, update `## Interface:` in `GuildSheet.toc` and rebuild the zip.
+- **Interface number:** `GuildSheet.toc` declares `16001` (Forever) and `120105` (retail 12.1.5). Add the new number there when either client is patched.
 - **Author:** `GuildSheet.toc` says `## Author: Hampus`. Change it if you'd rather use another name publicly.
